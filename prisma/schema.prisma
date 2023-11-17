@@ -1,0 +1,257 @@
+datasource db {
+  // could be postgresql or mysql
+  provider = "mongodb"
+  url      = env("MONGOURI")
+}
+
+generator client {
+  provider = "go run github.com/steebchen/prisma-client-go"
+}
+
+model water_areas {
+  id             String           @id @default(auto()) @map("_id") @db.ObjectId
+  name           String
+  note           String?
+  shipping_areas shipping_areas[]
+}
+
+model charterers {
+  id           String      @id @default(auto()) @map("_id") @db.ObjectId
+  company_name String
+  nation       String
+  phone_number String?
+  email_number String?
+  note         String?
+  shippings    shippings[]
+}
+
+model ships {
+  id              String   @id @default(auto()) @map("_id") @db.ObjectId
+  name            String
+  registered_date DateTime @default(now())
+  is_removed      Int      @default(0)
+  removed_date    DateTime
+  type            String?
+  year_of_build   Int?
+  flag            String?
+  homeport        String?
+  reg_number      String?
+  callsign        String?
+  IMO_Number      String?
+  gross_tonnage   Int?
+  net_tonnage     Int?
+  deadweight      Int?
+  length          Int?
+  beam            Int?
+  depth           Int?
+  draught         Int?
+  note            String?
+  photo           String[] @default([])
+
+  mariners     mariners[]
+  certificates certificates[]
+  shippings    shippings[]
+
+  photos               ship_photos[]
+  ship_certificates    ship_certificates[]
+  mariner_certificates mariner_certificates[]
+}
+
+model mariners {
+  id                   String    @id @default(auto()) @map("_id") @db.ObjectId
+  name                 String
+  birthday             DateTime
+  ship                 ships     @relation(fields: [ship_id], references: [id], onUpdate: Cascade, onDelete: Cascade)
+  ship_id              String    @db.ObjectId
+  duty                 duties    @relation(name: "MarinersDutyRelation", fields: [duty_id], references: [id], onUpdate: Cascade, onDelete: Cascade)
+  duty_id              String    @db.ObjectId
+  job                  duties    @relation(name: "MarinersJobRelation", fields: [job_id], references: [id], onUpdate: Cascade, onDelete: Cascade)
+  job_id               String    @db.ObjectId
+  registered_date      DateTime
+  is_retired           Int       @default(0)
+  retired_date         DateTime
+  daily_fee            Int?
+  platoon              String?
+  previous_affiliation String?
+  place_born           String?
+  place_residence      String?
+  code                 String?
+  mobile_phone         String?
+  home_phone           String?
+  graduated_from       String?
+  graduated_date       DateTime?
+  qualification_grade  String?
+  boarded_years        Int?
+  note                 String?
+  photo                String?
+
+  certificates         certificates[]
+  crew_fees            crew_fees[]
+  mariner_certificates mariner_certificates[]
+}
+
+model certificates {
+  id                   String                 @id @default(auto()) @map("_id") @db.ObjectId
+  name                 String
+  agency_name          String
+  note                 String?
+  type                 String
+  ships                ships?                 @relation(fields: [shipsId], references: [id])
+  shipsId              String?                @db.ObjectId
+  mariners             mariners?              @relation(fields: [marinersId], references: [id])
+  marinersId           String?                @db.ObjectId
+  mariner_certificates mariner_certificates[]
+  ship_certificates    ship_certificates[]
+}
+
+model mariner_certificates {
+  id             String       @id @default(auto()) @map("_id") @db.ObjectId
+  certificate    certificates @relation(fields: [certificate_id], references: [id], onUpdate: Cascade, onDelete: Cascade)
+  certificate_id String       @db.ObjectId
+  department     departments  @relation(fields: [department_id], references: [id], onUpdate: Cascade, onDelete: Cascade)
+  department_id  String       @db.ObjectId
+  mariner        mariners     @relation(fields: [mariner_id], references: [id], onUpdate: Cascade, onDelete: Cascade)
+  mariner_id     String       @db.ObjectId
+  ship           ships        @relation(fields: [ship_id], references: [id], onUpdate: Cascade, onDelete: Cascade)
+  ship_id        String       @db.ObjectId
+  putin_date     DateTime?
+  cert_ID        String?
+  issue_date     DateTime?
+  expire_date    DateTime?
+  account        String?
+  price          Int?
+  reg_fee        Int?
+}
+
+model ship_certificates {
+  id             String       @id @default(auto()) @map("_id") @db.ObjectId
+  certificate    certificates @relation(fields: [certificate_id], references: [id], onUpdate: Cascade, onDelete: Cascade)
+  certificate_id String       @db.ObjectId
+  department     departments  @relation(fields: [department_id], references: [id], onUpdate: Cascade, onDelete: Cascade)
+  department_id  String       @db.ObjectId
+  ship           ships        @relation(fields: [ship_id], references: [id], onUpdate: Cascade, onDelete: Cascade)
+  ship_id        String       @db.ObjectId
+  putin_date     DateTime?
+  cert_ID        String?
+  issue_date     DateTime?
+  expire_date    DateTime?
+  account        String?
+  price          Int?
+  reg_fee        Int?
+}
+
+model shippings {
+  id                         String           @id @default(auto()) @map("_id") @db.ObjectId
+  s_number                   String
+  ship                       ships            @relation(fields: [ship_id], references: [id], onUpdate: Cascade, onDelete: Cascade)
+  ship_id                    String           @db.ObjectId
+  charterer                  charterers       @relation(fields: [charterer_id], references: [id], onUpdate: Cascade, onDelete: Cascade)
+  charterer_id               String           @db.ObjectId
+  port                       String?
+  B_L                        String?
+  cargo                      String?
+  note                       String?
+  departure_datetime         DateTime?
+  departure_pass_datetime    DateTime?
+  arrived_datetime           DateTime?
+  arrived_pass_datetime      DateTime?
+  shipping_fee               Int?
+  deposit                    Int?
+  daily_wages                Int?
+  additional_fee             Int?
+  cost_others_note           String?
+  cost_fees_note             String?
+  inventory_before_departure Int?
+  added_fuel                 Int?
+  consume_before_departure   Int?
+  inventory_when_arrived     Int?
+  fuel_note                  String?
+  attachment                 String?
+  crew_fees                  crew_fees[]
+  other_costs                other_costs[]
+  shipping_areas             shipping_areas[]
+  attachments                attachments[]
+}
+
+model shipping_areas {
+  id               String         @id @default(auto()) @map("_id") @db.ObjectId
+  water_area       water_areas    @relation(fields: [water_areas_id], references: [id], onUpdate: Cascade, onDelete: Cascade)
+  water_areas_id   String         @db.ObjectId
+  shipping         shippings      @relation(fields: [shippings_id], references: [id], onUpdate: Cascade, onDelete: Cascade)
+  shippings_id      String         @db.ObjectId
+  in_datetime      DateTime?
+  out_datetime     DateTime?
+  shipping_type    shipping_types @relation(fields: [shipping_types_id], references: [id], onUpdate: Cascade, onDelete: Cascade)
+  shipping_types_id String         @db.ObjectId
+  note             String?
+  load_unloads     load_unloads[]
+}
+
+model load_unloads {
+  id                    String         @id @default(auto()) @map("_id") @db.ObjectId
+  shipping_area         shipping_areas @relation(fields: [shipping_areas_id], references: [id], onUpdate: Cascade, onDelete: Cascade)
+  shipping_areas_id     String         @db.ObjectId
+  load_type             String
+  port                  String?
+  arrived_datetime      DateTime?
+  weight                Int?
+  is_checked            Int?           @default(0)
+  checked_date          DateTime?
+  period_start_datetime DateTime?
+  period_end_datetime   DateTime?
+  note                  String?
+}
+
+model shipping_types {
+  id             String           @id @default(auto()) @map("_id") @db.ObjectId
+  name           String
+  shipping_areas shipping_areas[]
+}
+
+model attachments {
+  id          String    @id @default(auto()) @map("_id") @db.ObjectId
+  shipping    shippings @relation(fields: [shipping_id], references: [id], onUpdate: Cascade, onDelete: Cascade)
+  shipping_id String    @db.ObjectId
+  filename    String
+}
+
+model crew_fees {
+  id          String    @id @default(auto()) @map("_id") @db.ObjectId
+  mariner     mariners  @relation(fields: [mariner_id], references: [id], onUpdate: Cascade, onDelete: Cascade)
+  mariner_id  String    @db.ObjectId
+  days        Int?
+  daily_fee2  Int?
+  shipping    shippings @relation(fields: [shipping_id], references: [id], onUpdate: Cascade, onDelete: Cascade)
+  shipping_id String    @db.ObjectId
+}
+
+model other_costs {
+  id            String    @id @default(auto()) @map("_id") @db.ObjectId
+  item          String?
+  price         Int?
+  from_datetime DateTime?
+  to_datetime   DateTime?
+  shipping      shippings @relation(fields: [shipping_id], references: [id], onUpdate: Cascade, onDelete: Cascade)
+  shipping_id   String    @db.ObjectId
+}
+
+model departments {
+  id                   String                 @id @default(auto()) @map("_id") @db.ObjectId
+  name                 String
+  mariner_certificates mariner_certificates[]
+  ship_certificates    ship_certificates[]
+}
+
+model duties {
+  id              String     @id @default(auto()) @map("_id") @db.ObjectId
+  name            String
+  mariners_duties mariners[] @relation(name: "MarinersDutyRelation")
+  mariners_jobs   mariners[] @relation(name: "MarinersJobRelation")
+}
+
+model ship_photos {
+  id       String @id @default(auto()) @map("_id") @db.ObjectId
+  ship     ships  @relation(fields: [ship_id], references: [id], onUpdate: Cascade, onDelete: Cascade)
+  ship_id  String @db.ObjectId
+  filename String
+}
